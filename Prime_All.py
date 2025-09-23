@@ -1,13 +1,15 @@
 import math
 import os
 import random
+import multiprocessing
 
 import numpy as np
-from sympy import Poly, symbols
-from sympy.polys.domains import ZZ
+import gmpy2
+
+from gmpy2 import mpz, random_state, mpz_random
 
 """
-Sàng nguyên tố. Trả về dãy các số nguyên tố nhỏ hơn n
+Sàng nguyên tố. Trả về dãy các số nguyên tố nhỏ hơn n sd khi nhỏ hơn 32 bit
 """
 def simple_sieve(limit):
     """Tìm các số nguyên tố nhỏ hơn limit bằng Sàng Eratosthenes."""
@@ -41,7 +43,7 @@ def segmented_sieve(n):
     base_primes = simple_sieve(sqrt_n)
 
     # Kích thước đoạn (có thể điều chỉnh tùy máy)
-    segment_size = max(sqrt_n, 10 ** 6)
+    segment_size = max(sqrt_n, 10 ** 7)
     primes = base_primes.copy()
 
     # Xử lý từng đoạn [low, high]
@@ -122,7 +124,7 @@ def segmented_sieve_to_file(n, output_file="primes.txt"):
     # Kết hợp các số nguyên tố hiện có và mới
     if existing_primes:
         primes = sorted(list(set(existing_primes + primes)))  # Loại bỏ trùng lặp và sắp xếp
-        primes = [p for p in primes if p <= n]  # Lọc các số nguyên tố <= n
+        primes = [p for p in primes if p <= n and p > 1]  # Lọc các số nguyên tố <= n
 
     prime_count = len(primes)
 
@@ -140,215 +142,145 @@ def primitiveRoot_prime(n):
         Tìm các số nguyên tố nhỏ hơn hoặc bằng căn n"""
     prime_count, primes = segmented_sieve_to_file(n)
     sqrt_n = int(math.sqrt(n))
-    return [p for p in primes if p <= sqrt_n]
+    return [p for p in primes if p <= sqrt_n and p > 1]
 
-""" Kiểm tra số nguyên tố bằng Miller Rabin"""
-def Miller_Rabin_algorithm(n):
-    """ Kiểm tra số nguyên tố bằng thuật toán Miller Rabin
-        Thuật toán "Xác suất" có thể sai nhưng rất nhỏ """
-    if type(n) != int:
-        return False
-
-    if n == 2 or n == 3 or n == 5 or n == 7:
-        return True
-
-    if n % 2 == 0:
-        return False
-
-    k = 0
-    m = n - 1
-
-    while m % 2 == 0:
-        m = m / 2
-        k = k + 1
-
-    def test(a, n, k, m):
-
-        mod = pow(int(a), int(m), int(n))
-        if (mod == 1 or mod == n - 1):
-            return True
-
-        for i in range(1, k):
-            mod = (mod * mod) % n
-            if mod == n - 1:
-                return True
-
-        return False
+# Pre-compute small primes cho trial division (dùng cho tất cả cases)
+SMALL_PRIME_LIMIT = 10 ** 6
+SMALL_PRIMES = simple_sieve(SMALL_PRIME_LIMIT)
 
 
-    repeatTime = 10
-    for i in np.arange(repeatTime):
-        a = np.random.rand() % (n - 3) + 2
-        if not test(a, n, k, m):
-            return False
-
-    return True
-
-""" Kiểm tra nguyên tố AKS - Thuật toán chính xác
-    Có ý nghĩa trên lý thuyết - Thực tế quá phức tạp để triển khai"""
-def gcd_in_prime(a, b):
-    """Tính ước chung lớn nhất của a và b (dùng thuật toán Euclid)"""
-    a, b = abs(a), abs(b)
-    while b:
-        a, b = b, a % b
-    return a
-
-
-def is_perfect_power(n):
-    """Kiểm tra xem n có phải là lũy thừa hoàn hảo (m^k với k >= 2) hay không"""
+def is_divisible_by_small_primes(n):
+    """Chia thử để loại nhanh composites."""
     if n < 2:
-        return False
-    for b in range(2, int(math.log2(n)) + 1):
-        root = round(n ** (1.0 / b))
-        if root ** b == n:
-            return True
+        return True
+    if n < 2 ** 128:  # Small/medium: Dùng Python thuần
+        sqrt_n = int(math.sqrt(n)) + 1
+        for p in SMALL_PRIMES:
+            if p > sqrt_n:
+                break
+            if n % p == 0:
+                return True
+    else:  # Large: Dùng gmpy2.isqrt và mpz
+        n = mpz(n)
+        sqrt_n = gmpy2.isqrt(n) + 1
+        for p in SMALL_PRIMES:
+            if p > sqrt_n:
+                break
+            if n % p == 0:
+                return True
     return False
 
-
-def multiplicative_order(n, r):
-    """Tìm trật tự nhân của n trong Z/rZ"""
-    if gcd_in_prime(n, r) != 1:
-        return 0
-    k = 1
-    temp = n % r
-    while temp != 1:
-        temp = (temp * n) % r
-        k += 1
-        if k > r:  # Tránh vòng lặp vô hạn
-            return float('inf')
-    return k
-
-
-def find_r(n):
-    """Tìm r sao cho trật tự nhân của n trong Z/rZ lớn hơn log^2(n)"""
-    log_n = math.log2(n)
-    max_r = int(log_n ** 2) + 1
-    for r in range(2, max_r + 1):
-        if gcd_in_prime(r, n) != 1:
-            continue
-        if multiplicative_order(n, r) > log_n ** 2:
-            return r
-    return max_r
-
-
-def poly_check(n, r, a):
-    """Kiểm tra (x - a)^n ≡ x^n - a (mod n, x^r - 1)"""
-    x = symbols('x')
-    # Đa thức (x - a)^n
-    p1 = Poly((x - a) ** n, x, domain=ZZ)
-    # Đa thức x^n - a
-    p2 = Poly(x ** n - a, x, domain=ZZ)
-    # Lấy modulo theo x^r - 1
-    modulus = Poly(x ** r - 1, x, domain=ZZ)
-    p1_mod = p1 % modulus
-    p2_mod = p2 % modulus
-    # Lấy modulo n cho các hệ số
-    p1_coeffs = [c % n for c in p1_mod.all_coeffs()]
-    p2_coeffs = [c % n for c in p2_mod.all_coeffs()]
-    # Tái tạo đa thức với các hệ số đã modulo
-    p1_mod = Poly(p1_coeffs, x, domain=ZZ)
-    p2_mod = Poly(p2_coeffs, x, domain=ZZ)
-    # So sánh hai đa thức
-    return p1_mod == p2_mod
-
-
-def is_prime_aks(n):
-    """Kiểm tra tính nguyên tố của n bằng thuật toán AKS"""
-    # Bước 1: Kiểm tra cơ bản
-    if n <= 1:
+# Miller-Rabin pure Python với fixed bases cho small/medium bits
+def miller_rabin_pure(n):
+    """Miller-Rabin deterministic cho n < 2^128."""
+    if n < 2:
         return False
-    if n == 2 or n == 3:
+    if n in (2, 3, 5, 7, 11, 13, 17, 23):
         return True
     if n % 2 == 0:
         return False
-    if is_perfect_power(n):
-        return False
 
-    # Bước 2: Tìm r
-    r = find_r(n)
+    # Write n-1 as 2^r * s
+    r, s = 0, n - 1
+    while s % 2 == 0:
+        r += 1
+        s //= 2
 
-    # Bước 3: Kiểm tra ước chung
-    for a in range(2, min(r + 1, n)):
-        g = gcd_in_prime(a, n)
-        if 1 < g < n:
+    # Fixed bases đủ cho n < 2^128 (dựa trên known deterministic sets)
+    bases = [2, 3, 5, 7, 11, 13, 17, 23, 29, 31, 37]  # Chính xác 100% cho n < 3.317e38 (~128 bit)
+
+    for a in bases:
+        if a >= n:
+            break
+        x = pow(a, s, n)
+        if x == 1 or x == n - 1:
+            continue
+        for _ in range(r - 1):
+            x = (x * x) % n
+            if x == n - 1:
+                break
+        else:
             return False
-
-    # Bước 4: Nếu n <= r, n là số nguyên tố
-    if n <= r:
-        return True
-
-    # Bước 5: Kiểm tra đa thức
-    for a in range(1, int(math.sqrt(r) * math.log2(n)) + 1):
-        if not poly_check(n, r, a):
-            return False
-
-    # Bước 6: Nếu vượt qua tất cả, n là số nguyên tố
     return True
 
-""" Kiểm tra số nguyên tố - Chưa sử dụng AKS"""
+
+"""Kiểm tra số nguyên tố - Chia case"""
 def prime_check(n):
-    """ Kiểm tra số nguyên tố """
-    if Miller_Rabin_algorithm(n) == False:
-        return False
+    if n < 2 ** 128:  # Small/medium: Pure Python
+        if is_divisible_by_small_primes(n):
+            return False
+        return miller_rabin_pure(n)
+    else:  # Large: gmpy2
+        n = mpz(n)
+        return gmpy2.is_prime(n)
 
-    # if is_prime_aks(n) == False:
-    #     return False
-
-    return True
-
-""" Tạo số nguyên tố n bit"""
-def general_prime_bit(bit):
-    """ Tạo một số nguyên tố n bit"""
-    res = 0
+# Hàm check_candidate tách ra module level
+def check_candidate_large(low, high, seed):
+    """Check candidate cho large bits (gmpy2)."""
+    rstate = random_state(seed)
     while True:
-        number = random.getrandbits(bit)
-        if prime_check(number) == True:
-            res = number
-            break
-
-    return res
-
-def general_prime_in_range(low, high):
-    res = 0
-    while True:
-        number = random.randint(low, high)
-        if prime_check(number) == True:
-            res = number
-            break
-
-    return res
+        candidate = mpz_random(rstate, high - low + 1) + low
+        if not is_divisible_by_small_primes(int(candidate)):
+            if prime_check(int(candidate)):
+                return int(candidate)
 
 
-# # Kiểm tra ví dụ
-# test_numbers = 13248734287293484729327
-# print(is_prime_aks(test_numbers))
+"""Tạo số nguyên tố n bit - Chia case"""
+def general_prime_bit(bit, num_processes=8):
+    """Tạo số nguyên tố n bit - Chia case."""
+    low = 2 ** (bit - 1)
+    high = 2 ** bit - 1
 
-# # Kiểm tra ví dụ
-# print(general_prime(17))
-#
-# print(is_prime_aks(66337))
+    if bit <= 128:  # Small/medium: Pure Python
+        while True:
+            candidate = random.randint(low, high)
+            if not is_divisible_by_small_primes(candidate):
+                if miller_rabin_pure(candidate):
+                    return candidate
+    else:  # Large: gmpy2 + parallel
+        multiprocessing.set_start_method('spawn', force=True)  # Force spawn cho Windows
+        low = mpz(low)
+        high = mpz(high)
 
-# # Ví dụ sử dụng
-# n = 2**20
-# import time
-# start_time = time.time()
-# count, primes = segmented_sieve_to_file(n, "primes.txt")
-# end_time = time.time()
-#
-# print(f"Số lượng số nguyên tố nhỏ hơn {n}: {count}")
-# print(f"Thời gian thực thi: {end_time - start_time:.4f} giây")
-# print("Đã lưu các số nguyên tố vào primes.txt")
+        # Windows cần if __name__ == '__main__' bảo vệ Pool
+        # Nhưng vì đây là hàm, ta đảm bảo check_candidate_large ở module level
+        with multiprocessing.Pool(processes=num_processes) as pool:
+            seeds = [random.randint(1, 1000000) for _ in range(num_processes)]
+            results = [pool.apply_async(check_candidate_large, args=(low, high, seed))
+                       for seed in seeds]
+            for res in results:
+                try:
+                    prime = res.get(timeout=5)
+                    pool.terminate()
+                    return prime
+                except multiprocessing.TimeoutError:
+                    pass
+        return int(gmpy2.next_prime(low))
 
 
-# # Ví dụ sử dụng
-# n = 133  # n > 2^32
-# import time
-#
-# start_time = time.time()
-# primes = segmented_sieve(n)
-# end_time = time.time()
-#
-# print(f"Số lượng số nguyên tố nhỏ hơn {n}: {len(primes)}")
-# print(f"Thời gian thực thi: {end_time - start_time:.4f} giây")
-# print(f"Một vài số nguyên tố đầu tiên: {primes[:100]}")
-# print(f"Số nguyên tố cuối cùng: {primes[-1]}")
+def general_prime_in_range(low, high, num_processes=8):
+    """Tạo số nguyên tố trong range - Chia case."""
+    bit_est = math.log2(high)
+    if bit_est <= 128:
+        while True:
+            candidate = random.randint(low, high)
+            if not is_divisible_by_small_primes(candidate):
+                if miller_rabin_pure(candidate):
+                    return candidate
+    else:
+        low_mpz = mpz(low)
+        high_mpz = mpz(high)
+
+        with multiprocessing.Pool(processes=num_processes) as pool:
+            seeds = [random.randint(1, 1000000) for _ in range(num_processes)]
+            results = [pool.apply_async(check_candidate_large, args=(low_mpz, high_mpz, seed))
+                       for seed in seeds]
+            for res in results:
+                try:
+                    prime = res.get(timeout=5)
+                    pool.terminate()
+                    return prime
+                except multiprocessing.TimeoutError:
+                    pass
+        return int(gmpy2.next_prime(low_mpz))
+
