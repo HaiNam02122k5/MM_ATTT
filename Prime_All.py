@@ -226,7 +226,7 @@ def check_candidate_large(low, high, seed):
 
 
 """Tạo số nguyên tố n bit - Chia case"""
-def general_prime_bit(bit, num_processes=8):
+def generate_prime_bit(bit, num_processes=8):
     """Tạo số nguyên tố n bit - Chia case."""
     low = 2 ** (bit - 1)
     high = 2 ** bit - 1
@@ -258,7 +258,7 @@ def general_prime_bit(bit, num_processes=8):
         return int(gmpy2.next_prime(low))
 
 
-def general_prime_in_range(low, high, num_processes=8):
+def generate_prime_in_range(low, high, num_processes=8):
     """Tạo số nguyên tố trong range - Chia case."""
     bit_est = math.log2(high)
     if bit_est <= 128:

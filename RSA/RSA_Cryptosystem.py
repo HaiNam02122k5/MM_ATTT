@@ -1,8 +1,9 @@
 import multiprocessing
 from gmpy2 import mpz
 
-from Prime_All import general_prime_bit, general_prime_in_range
+from Prime_All import generate_prime_bit, generate_prime_in_range
 from NumberTheory import moduloPower, inverseModulo, gcd
+from SubDef.String_Int import text_to_int, int_to_text
 
 
 def get_input_by_key(file_name):
@@ -23,8 +24,8 @@ def get_input_by_key(file_name):
 
 def RSA_algorithm(bit=40, output_file = "RSA_information.txt"):
     """ Khởi tạo các tham số cho RSA """
-    p = general_prime_bit(bit)
-    q = general_prime_bit(bit)
+    p = generate_prime_bit(bit)
+    q = generate_prime_bit(bit)
 
     # Tạo n
     n = p * q
@@ -34,9 +35,9 @@ def RSA_algorithm(bit=40, output_file = "RSA_information.txt"):
     phi_n = (p - 1) * (q - 1)
 
     # Chọn e nguyên tố cùng nhau với phi_n và nhỏ hơn phi_n
-    e = general_prime_in_range(1, phi_n)
+    e = generate_prime_in_range(1, phi_n)
     while gcd(e, phi_n) != 1:
-        e = general_prime_bit(2 * bit - bit / 2)
+        e = generate_prime_bit(2 * bit - bit / 2)
 
     d = inverseModulo(e, phi_n)
 
@@ -50,9 +51,13 @@ def RSA_algorithm(bit=40, output_file = "RSA_information.txt"):
     except FileNotFoundError:
         print("File không tồn tại!")
 
+    # n, e là khóa công khai
+    # p, q, d là khóa bí mật
     return n, p, q, phi_n, e, d
 
-def RSA_encrypt(x, n = None, e = None, input_file = "RSA_information.txt", output_file = "RSA_encrypted.txt"):
+def RSA_encrypt(x, n = None, e = None, input_file = "RSA_information.txt",
+                output_file = "./RSA_Crytosystem/RSA_encrypted.txt"):
+    x = text_to_int(x)
     data = get_input_by_key(input_file)
     if n is None:
         n = mpz(data["n"])
@@ -69,7 +74,9 @@ def RSA_encrypt(x, n = None, e = None, input_file = "RSA_information.txt", outpu
 
     return result
 
-def RSA_decrypt(y = None, n = None, d = None, input_file = "RSA_information.txt", cypher_text = "cypher_text.txt", output_file = "RSA_decrypted.txt"):
+def RSA_decrypt(y = None, n = None, d = None, input_file = "RSA_information.txt",
+                cypher_text = "./RSA_Crytosystem/cypher_text.txt",
+                output_file = "./RSA_Crytosystem/RSA_decrypted.txt"):
     data = get_input_by_key(input_file)
     if n is None:
         n = mpz(data["n"])
@@ -78,22 +85,88 @@ def RSA_decrypt(y = None, n = None, d = None, input_file = "RSA_information.txt"
     if y is None:
         data = get_input_by_key(cypher_text)
         y = mpz(data["cypher_text"])
-    result = moduloPower(y, d, n)
+    result = int_to_text(moduloPower(y, d, n))
     try:
         with open(output_file, "w") as file:
             print("plaintext:", result, file=file)
 
     except FileNotFoundError:
         print("File dell tồn tại!")
+
     return result
+
+def RSA_sign(x = None, n = None, d = None, input_file = "RSA_information.txt",
+             message = "./RSA_Signature_Scheme/message.txt",
+             output_file = "./RSA_Signature_Scheme/RSA_signed.txt"):
+    no_mess = True # truyền x từ đầu vào
+    data = get_input_by_key(input_file)
+    if n is None:
+        n = data["n"]
+    if d is None:
+        d = data["d"]
+
+    if x is None:
+        data = get_input_by_key(message)
+        x = data["message"]
+        no_mess = False
+
+    sign_k = moduloPower(x, d, n)
+
+    try:
+        with open(output_file, "w") as file:
+            print("signature:", sign_k, file=file)
+        if no_mess:
+            with open(message, "w") as file:
+                print("message:", x, file=file)
+    except FileNotFoundError:
+        print("File dell tồn tại!")
+
+    return sign_k
+
+def RSA_ver(x = None, y = None, n = None, e = None, input_file = "RSA_information.txt",
+            message = "./RSA_Signature_Scheme/message.txt",
+            signature = "./RSA_Signature_Scheme/signature.txt",
+            output_file = "./RSA_Signature_Scheme/RSA_verify.txt"):
+    data = get_input_by_key(input_file)
+    if e is None:
+        e = data["e"]
+    if n is None:
+        n = data["n"]
+
+    if x is None:
+        data = get_input_by_key(message)
+        x = data["message"]
+
+    if y is None:
+        data = get_input_by_key(signature)
+        y = data["signature"]
+
+    ver = moduloPower(y, e, n)
+    if x == ver:
+        try:
+            with open(output_file, "w") as file:
+                print("True", file=file)
+                print("The signature is True!", file=file)
+        except FileNotFoundError:
+            print("File dell tồn tại!")
+        return True
+    if x != ver:
+        try:
+            with open(output_file, "w") as file:
+                print("False", file=file)
+                print("The signature is False!", file=file)
+        except FileNotFoundError:
+            print("File dell tồn tại!")
+        return False
+
+
 
 if __name__ == "__main__":
     multiprocessing.set_start_method('spawn', force=True)
     multiprocessing.freeze_support()
 
-    bit = 2048
-
-    print(RSA_decrypt())
+    RSA_encrypt("NguyenHaiNam23021643")
+    RSA_decrypt()
 
 
 
