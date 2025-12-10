@@ -1,5 +1,6 @@
 import multiprocessing
 import random
+from gmpy2 import mpz
 
 from Prime_All import generate_prime_bit
 from ECC.Elliptic_Curve import EllipticCurve

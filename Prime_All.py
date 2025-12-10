@@ -1,11 +1,10 @@
 import math
+import multiprocessing
 import os
 import random
-import multiprocessing
 
-import numpy as np
 import gmpy2
-
+import numpy as np
 from gmpy2 import mpz, random_state, mpz_random
 
 """
@@ -226,7 +225,7 @@ def check_candidate_large(low, high, seed):
 
 
 """Tạo số nguyên tố n bit - Chia case"""
-def generate_prime_bit(bit, num_processes=8):
+def generate_prime_bit(bit, num_processes=4):
     """Tạo số nguyên tố n bit - Chia case."""
     low = 2 ** (bit - 1)
     high = 2 ** bit - 1
@@ -284,3 +283,8 @@ def generate_prime_in_range(low, high, num_processes=8):
                     pass
         return int(gmpy2.next_prime(low_mpz))
 
+
+if __name__ == "__main__":
+    multiprocessing.set_start_method('spawn', force=True)
+    multiprocessing.freeze_support()
+    print(generate_prime_bit(2048))

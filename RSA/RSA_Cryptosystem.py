@@ -165,7 +165,7 @@ if __name__ == "__main__":
     multiprocessing.set_start_method('spawn', force=True)
     multiprocessing.freeze_support()
 
-    RSA_encrypt("NguyenHaiNam23021643")
+    RSA_encrypt("HaiNam")
     RSA_decrypt()
 
 

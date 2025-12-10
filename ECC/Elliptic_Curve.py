@@ -1,3 +1,5 @@
+import hashlib
+import os
 import random
 
 from NumberTheory import inverseModulo, moduloPower, modulo
@@ -127,168 +129,261 @@ class EllipticCurve:
 
 
 class Curve25519:
-    """
-    Curve25519: Đường cong Montgomery
-    Dạng: By² = x³ + Ax² + x (mod p)
+    """Lớp đại diện cho đường cong Curve25519/Ed25519"""
 
-    Tham số chuẩn:
-    - p = 2^255 - 19
-    - A = 486662
-    - B = 1
-    - Base point: x = 9
-    - Order (bậc): n = 2^252 + 27742317777372353535851937790883648493
-    """
-
-    def __init__(self):
-        # Tham số đường cong Curve25519
-        self.p = pow(2, 255) - 19
-        self.A = 486662
-        self.B = 1
-
-        # Điểm sinh G (base point)
-        # Curve25519 thường dùng x-coordinate only
-        self.G_x = 9
-
-        # Tính y từ x = 9
-        # By² = x³ + Ax² + x (mod p)
-        # y² = (x³ + Ax² + x) / B (mod p)
-        rhs = (moduloPower(self.G_x, 3, self.p) + self.A * moduloPower(self.G_x, 2, self.p) + self.G_x) % self.p
-        rhs = (rhs * inverseModulo(self.B, self.p)) % self.p
-
-        # Tính căn bậc hai (với p ≡ 3 mod 4, dùng y = rhs^((p+1)/4))
-        # Nhưng p = 2^255 - 19 ≡ 5 (mod 8), cần phương pháp khác
-        self.G_y = self._mod_sqrt_p_5_mod_8(rhs)
-
-        self.G = (self.G_x, self.G_y)
-
-        # Bậc của đường cong (order/cofactor)
-        # Curve25519: #E = 8 * n (cofactor h = 8)
-        self.n = pow(2, 252) + 27742317777372353535851937790883648493
-        self.cofactor = 8
-
-        # Bậc thực tế của điểm sinh G
-        self.order = self.n
-
-        print("=" * 70)
-        print("CURVE25519 - Thông số chuẩn")
-        print("=" * 70)
-        print(f"Đường cong Montgomery: By² = x³ + Ax² + x (mod p)")
-        print(f"\nTham số:")
-        print(f"  p = 2^255 - 19")
-        print(f"    = {self.p}")
-        print(f"  A = {self.A}")
-        print(f"  B = {self.B}")
-        print(f"\nĐiểm sinh G:")
-        print(f"  G.x = {self.G_x}")
-        print(f"  G.y = {self.G_y}")
-        print(f"\nBậc (Order):")
-        print(f"  n = 2^252 + 27742317777372353535851937790883648493")
-        print(f"    = {self.n}")
-        print(f"  Cofactor = {self.cofactor}")
-        print(f"  #E(Fp) = {self.cofactor * self.n}")
-        print("=" * 70)
-
-    def _mod_sqrt_p_5_mod_8(self, a):
+    def __init__(self, curve_type="ed25519"):
         """
-        Tính căn bậc hai modulo p khi p ≡ 5 (mod 8)
-        Thuật toán Tonelli-Shanks cho trường hợp đặc biệt
+        Khởi tạo đường cong
+        curve_type: "curve25519" (Montgomery) hoặc "ed25519" (Edwards)
         """
-        p = self.p
+        self.curve_type = curve_type.lower()
 
-        # Công thức: y = a^((p+3)/8) hoặc y = a^((p+3)/8) * 2^((p-1)/4)
-        exp1 = (p + 3) // 8
-        y = moduloPower(a, exp1, p)
+        # Tham số chung
+        self.p = 2 ** 255 - 19  # Prime field modulus
+        self.P = self.p  # Giữ P để tương thích với code cũ
+        self.n = 2 ** 252 + 27742317777372353535851937790883648493  # Order (cấp của đường cong)
+        self.L = self.n  # Giữ L để tương thích với code cũ
 
-        # Kiểm tra
-        if moduloPower(y, 2, p) == a:
-            return y
+        if self.curve_type == "ed25519":
+            # Ed25519 parameters (Edwards curve - dùng cho signature)
+            # Phương trình: -x^2 + y^2 = 1 + d*x^2*y^2
+            self.a = -1  # Hệ số a trong twisted Edwards curve
+            self.d = -121665 * int(inverseModulo(121666, self.p)) % self.p  # Hệ số d
+            self.D = self.d  # Giữ D để tương thích
 
-        # Thử phương án 2
-        exp2 = (p - 1) // 4
-        y = (y * moduloPower(2, exp2, p)) % p
+            # Base point (điểm sinh)
+            self.Bx = 15112221349535400772501151409588531511454012693041857206046113283949847762202
+            self.By = 46316835694926478169428394003475163141307993866256225615783033603165251855960
+            self.B = (self.Bx, self.By)
+            self.G = self.B  # Generator point
 
-        if moduloPower(y, 2, p) == a:
-            return y
-
-        raise ValueError("Không tìm thấy căn bậc hai!")
-
-    def is_on_curve(self, point):
-        """Kiểm tra điểm có nằm trên đường cong không"""
-        if point is None:
-            return True
-
-        x, y = point
-        # By² = x³ + Ax² + x (mod p)
-        lhs = (self.B * moduloPower(y, 2, self.p)) % self.p
-        rhs = (moduloPower(x, 3, self.p) + self.A * moduloPower(x, 2, self.p) + x) % self.p
-
-        return lhs == rhs
-
-    def point_add(self, P, Q):
-        """
-        Phép cộng điểm trên đường cong Montgomery
-        Công thức khác với Weierstrass!
-        """
-        if P is None:
-            return Q
-        if Q is None:
-            return P
-
-        x1, y1 = P
-        x2, y2 = Q
-
-        # Trường hợp P = -Q
-        if x1 == x2 and (y1 + y2) % self.p == 0:
-            return None
-
-        # Tính hệ số góc
-        if P == Q:
-            # Phép nhân đôi
-            # λ = (3x1² + 2Ax1 + 1) / (2By1)
-            numerator = (3 * moduloPower(x1, 2, self.p) + 2 * self.A * x1 + 1) % self.p
-            denominator = (2 * self.B * y1) % self.p
+            # Không có b cho Edwards curve (dùng a và d)
+            self.b = None
         else:
-            # Phép cộng
-            # λ = (y2 - y1) / (x2 - x1)
-            numerator = (y2 - y1) % self.p
-            denominator = (x2 - x1) % self.p
+            # Curve25519 parameters (Montgomery curve - dùng cho ECDH)
+            # Phương trình: By^2 = x^3 + Ax^2 + x
+            self.A = 486662  # Hệ số A
+            self.a = self.A
+            self.B_coeff = 1  # Hệ số B trong phương trình Montgomery
+            self.b = self.B_coeff
 
-        lambda_val = (numerator * inverseModulo(denominator, self.p)) % self.p
+            # Base point u-coordinate (điểm sinh)
+            self.Bu = 9
+            # v-coordinate tương ứng (tính được từ phương trình)
+            self.Bv = self._compute_v_from_u(self.Bu)
+            self.G = self.Bu  # Generator u-coordinate
+            self.B = (self.Bu, self.Bv)  # Base point đầy đủ
 
-        # Tính x3, y3
-        # x3 = Bλ² - A - x1 - x2
-        x3 = (self.B * moduloPower(lambda_val, 2, self.p) - self.A - x1 - x2) % self.p
+    def _compute_v_from_u(self, u):
+        """Tính v-coordinate từ u-coordinate cho Montgomery curve"""
+        # By^2 = x^3 + Ax^2 + x
+        # v^2 = u^3 + A*u^2 + u (mod p)
+        rhs = (pow(u, 3, self.p) + self.A * pow(u, 2, self.p) + u) % self.p
+        # Tính căn bậc hai modulo p (Tonelli-Shanks có thể dùng)
+        # Với p ≡ 3 (mod 4), có thể dùng v = rhs^((p+1)/4) mod p
+        # Nhưng p = 2^255 - 19 ≡ 5 (mod 8), cần thuật toán phức tạp hơn
+        # Để đơn giản, trả về None hoặc giá trị đã biết
+        # v cho u=9 được biết trước
+        if u == 9:
+            return 14781619447589544791020593568409986887264606134616475288964881837755586237401
+        return None
 
-        # y3 = λ(x1 - x3) - y1
-        y3 = (lambda_val * (x1 - x3) - y1) % self.p
+    def get_curve_params(self):
+        """Trả về dictionary chứa các tham số của đường cong"""
+        params = {
+            'type': self.curve_type,
+            'p': self.p if hasattr(self, 'p') else self.P,
+            'n': self.L,
+        }
+
+        if self.curve_type == "ed25519":
+            params.update({
+                'equation': '-x^2 + y^2 = 1 + d*x^2*y^2',
+                'a': -1,
+                'd': self.D,
+                'base_point': f"G = ({self.Bx}, {self.By})"
+            })
+        else:
+            params.update({
+                'equation': 'By^2 = x^3 + Ax^2 + x',
+                'A': self.A,
+                'B': 1,
+                'base_point': f"G = (u={self.Bu})"
+            })
+
+        return params
+
+    def print_curve_info(self):
+        """In thông tin đầy đủ về đường cong"""
+        p = self.p if hasattr(self, 'p') else self.P
+
+        print(f"\n{'=' * 70}")
+        print(f"Curve Type: {self.curve_type.upper()}")
+        print(f"{'=' * 70}")
+
+        if self.curve_type == "ed25519":
+            print(f"Equation: -x² + y² = 1 + d·x²·y²")
+            print(f"\nParameters:")
+            print(f"  p (prime modulus) = 2^255 - 19")
+            print(f"                    = {p}")
+            print(f"  a = -1")
+            print(f"  d = {self.D}")
+            print(f"  n (order)        = {self.L}")
+            print(f"\nBase Point (Generator G):")
+            print(f"  Gx = {self.Bx}")
+            print(f"  Gy = {self.By}")
+        else:
+            print(f"Equation: B·y² = x³ + A·x² + x")
+            print(f"\nParameters:")
+            print(f"  p (prime modulus) = 2^255 - 19")
+            print(f"                    = {p}")
+            print(f"  A = {self.A}")
+            print(f"  B = 1")
+            print(f"  n (order)        = {self.L}")
+            print(f"\nBase Point (Generator G):")
+            print(f"  Gu = {self.Bu}")
+
+        print(f"{'=' * 70}\n")
+
+    def point_add(self, P1, P2):
+        """Cộng hai điểm trên Ed25519"""
+        if self.curve_type != "ed25519":
+            raise NotImplementedError("Point addition chỉ implement cho Ed25519")
+
+        if P1 is None:
+            return P2
+        if P2 is None:
+            return P1
+
+        x1, y1 = P1
+        x2, y2 = P2
+
+        x1x2 = x1 * x2
+        y1y2 = y1 * y2
+        dx1x2y1y2 = self.D * x1x2 * y1y2
+
+        x3 = ((x1 * y2 + y1 * x2) * int(inverseModulo(1 + dx1x2y1y2, self.P))) % self.P
+        y3 = ((y1y2 + x1x2) * int(inverseModulo(1 - dx1x2y1y2, self.P))) % self.P
 
         return (x3, y3)
 
-    def point_multiply(self, k, P):
-        """
-        Phép nhân vô hướng: k * P
-        Sử dụng Montgomery ladder (an toàn với timing attack)
-        """
+    def scalar_mult(self, k, point=None):
+        """Nhân vô hướng điểm"""
+        if self.curve_type == "ed25519":
+            return self._ed25519_scalar_mult(k, point)
+        else:
+            return self._curve25519_scalar_mult(k, point)
+
+    def _ed25519_scalar_mult(self, k, point=None):
+        """Nhân vô hướng cho Ed25519"""
+        if point is None:
+            point = self.B
+
         if k == 0:
             return None
+        if k == 1:
+            return point
 
-        if k < 0:
-            k = -k
-            P = (P[0], (-P[1]) % self.p)
+        result = None
+        addend = point
 
-        # Montgomery ladder
-        R0 = None  # O
-        R1 = P
+        while k:
+            if k & 1:
+                result = self.point_add(result, addend)
+            addend = self.point_add(addend, addend)
+            k >>= 1
 
-        # Lấy bit của k từ trái sang phải
-        bits = bin(k)[2:]  # Bỏ '0b'
+        return result
 
-        for bit in bits:
-            if bit == '0':
-                R1 = self.point_add(R0, R1)
-                R0 = self.point_add(R0, R0)
+    def _curve25519_scalar_mult(self, k, u=None):
+        """
+        Nhân vô hướng cho Curve25519 (Montgomery ladder)
+        Trả về u-coordinate của k*P
+        """
+        if u is None:
+            u = self.Bu
+
+        # Montgomery ladder để tránh timing attacks
+        u2, w2 = (1, 0)
+        u3, w3 = (u, 1)
+
+        k_bits = bin(k)[2:]
+
+        for bit in k_bits:
+            if bit == '1':
+                u2, w2, u3, w3 = self._differential_add(u2, w2, u3, w3, u)
             else:
-                R0 = self.point_add(R0, R1)
-                R1 = self.point_add(R1, R1)
+                u3, w3, u2, w2 = self._differential_add(u3, w3, u2, w2, u)
 
-        return R0
+        return (u2 * int(inverseModulo(w2, self.P))) % self.P
+
+    def _differential_add(self, u2, w2, u3, w3, u):
+        """Phép cộng differential cho Montgomery ladder"""
+        A = (u2 + w2) % self.P
+        AA = (A * A) % self.P
+        B = (u2 - w2) % self.P
+        BB = (B * B) % self.P
+        E = (AA - BB) % self.P
+        C = (u3 + w3) % self.P
+        D = (u3 - w3) % self.P
+        DA = (D * A) % self.P
+        CB = (C * B) % self.P
+
+        u_sum = pow(DA + CB, 2, self.P)
+        u_diff = (u * pow(DA - CB, 2, self.P)) % self.P
+
+        u2_new = (AA * BB) % self.P
+        w2_new = (E * (AA + ((self.A - 2) // 4) * E)) % self.P
+
+        return u2_new, w2_new, u_sum, u_diff
+
+    def generate_private_key(self):
+        """Tạo private key ngẫu nhiên"""
+        private_key = int.from_bytes(os.urandom(32), 'little')
+
+        if self.curve_type == "ed25519":
+            private_key = private_key % self.L
+            if private_key == 0:
+                private_key = 1
+        else:
+            # Clamping cho Curve25519
+            private_key &= ~7  # Clear 3 bits thấp nhất
+            private_key &= ~(128 << 8 * 31)  # Clear bit cao nhất
+            private_key |= 64 << 8 * 31  # Set bit thứ 2 cao nhất
+
+        return private_key
+
+    def get_public_key(self, private_key):
+        """Tính public key từ private key"""
+        return self.scalar_mult(private_key)
+
+    def derive_signing_key(self, shared_secret, context=b"signature"):
+        """
+        Derive signing key từ shared secret
+        shared_secret: shared secret từ ECDH
+        context: context string để phân biệt các mục đích sử dụng
+        """
+        if self.curve_type != "ed25519":
+            # Chuyển sang Ed25519 để signing
+            ed_curve = Curve25519("ed25519")
+            return ed_curve.derive_signing_key(shared_secret, context)
+
+        # Hash shared secret với context để tạo signing key
+        if isinstance(shared_secret, int):
+            shared_secret = shared_secret.to_bytes(32, 'little')
+
+        material = context + shared_secret
+        derived = hashlib.sha512(material).digest()
+
+        # Lấy 32 bytes đầu làm private key
+        signing_key = int.from_bytes(derived[:32], 'little') % self.L
+        if signing_key == 0:
+            signing_key = 1
+
+        return signing_key
+
+    def __str__(self):
+        return f"Curve25519({self.curve_type})"
+
+    def __repr__(self):
+        return self.__str__()

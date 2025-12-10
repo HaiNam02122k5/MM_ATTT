@@ -5,41 +5,30 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bec88e94-b09d-4d65-b1fc-25c702d77a3d" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ECC/EC_ElGamal/EC_ElGamal.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ECC/EC_ElGamal/EC_ElGamal_Cryptosystem/EC_ElGamal_encrypted.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ECC/EC_ElGamal/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ECC/Elliptic_Curve.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ElGamal/ElGamal_Crytosystem/ElGamal_encrypted.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ElGamal/ElGamal_Crytosystem/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ElGamal/ElGamal_Crytosystem/cypher_text.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ElGamal/ElGamal_Signature_Scheme/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ElGamal/ElGamal_Signature_Scheme/message.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ElGamal/ElGamal_Signature_Scheme/signature.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/RSA/RSA_Crytosystem/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/RSA/RSA_Signature_Scheme/RSA_signed.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/RSA/RSA_Signature_Scheme/RSA_verify.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/RSA/RSA_Signature_Scheme/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/RSA/RSA_Signature_Scheme/message.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/RSA/RSA_Signature_Scheme/signature.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/SubDef/String_Int.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/SubDef/String_Point.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ECPP/ECPP.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ECPP/ECPP_Core.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ECPP/ECPP_PARI.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ECPP/ECPP_Types.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ECPP/ECPP_Utils.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ECPP/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/new_AKS.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ECC/ECC_Cryptosystem.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ECC/ECC_decypted.txt" beforeDir="false" afterPath="$PROJECT_DIR$/ECC/ECDSA/ECDSA.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ECC/cypher_text.txt" beforeDir="false" afterPath="$PROJECT_DIR$/ECC/ECDSA/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ElGamal/ElGamal_Crytosystem.py" beforeDir="false" afterPath="$PROJECT_DIR$/ElGamal/ElGamal_Crytosystem.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ElGamal/ElGamal_decrypted.txt" beforeDir="false" afterPath="$PROJECT_DIR$/ElGamal/ElGamal_Crytosystem/ElGamal_decrypted.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ElGamal/ElGamal_encrypted.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ElGamal/ElGamal_information.txt" beforeDir="false" afterPath="$PROJECT_DIR$/ElGamal/ElGamal_information.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ElGamal/cypher_text.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/AKS_Algorithm.py" beforeDir="false" afterPath="$PROJECT_DIR$/AKS_Algorithm.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ECC/ECDSA/ECDSA.py" beforeDir="false" afterPath="$PROJECT_DIR$/ECC/ECDSA/ECDSA.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ECC/ECDSA/ECDSA_Signature/ECDSA_signature.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ECC/ECDSA/ECDSA_Signature/ECDSA_verify.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ECC/ECDSA/ECDSA_information.txt" beforeDir="false" afterPath="$PROJECT_DIR$/ECC/ECDSA/ECDSA_information.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ECC/EC_ElGamal/EC_ElGamal.py" beforeDir="false" afterPath="$PROJECT_DIR$/ECC/EC_ElGamal/EC_ElGamal.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ECC/EC_ElGamal/EC_ElGamal_Cryptosystem/EC_ElGamal_decrypted.txt" beforeDir="false" afterPath="$PROJECT_DIR$/ECC/EC_ElGamal/EC_ElGamal_Cryptosystem/EC_ElGamal_decrypted.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ECC/EC_ElGamal/EC_ElGamal_Cryptosystem/EC_ElGamal_encrypted.txt" beforeDir="false" afterPath="$PROJECT_DIR$/ECC/EC_ElGamal/EC_ElGamal_Cryptosystem/EC_ElGamal_encrypted.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ECC/Elliptic_Curve.py" beforeDir="false" afterPath="$PROJECT_DIR$/ECC/Elliptic_Curve.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NumberTheory.py" beforeDir="false" afterPath="$PROJECT_DIR$/NumberTheory.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Prime_All.py" beforeDir="false" afterPath="$PROJECT_DIR$/Prime_All.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/RSA/RSA_Cryptosystem.py" beforeDir="false" afterPath="$PROJECT_DIR$/RSA/RSA_Cryptosystem.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RSA/RSA_decrypted.txt" beforeDir="false" afterPath="$PROJECT_DIR$/RSA/RSA_Crytosystem/RSA_decrypted.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RSA/RSA_encrypted.txt" beforeDir="false" afterPath="$PROJECT_DIR$/RSA/RSA_Crytosystem/RSA_encrypted.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RSA/cypher_text.txt" beforeDir="false" afterPath="$PROJECT_DIR$/RSA/RSA_Crytosystem/cypher_text.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RSA/RSA_Crytosystem/RSA_decrypted.txt" beforeDir="false" afterPath="$PROJECT_DIR$/RSA/RSA_Crytosystem/RSA_decrypted.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RSA/RSA_Crytosystem/RSA_encrypted.txt" beforeDir="false" afterPath="$PROJECT_DIR$/RSA/RSA_Crytosystem/RSA_encrypted.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RSA/RSA_Crytosystem/cypher_text.txt" beforeDir="false" afterPath="$PROJECT_DIR$/RSA/RSA_Crytosystem/cypher_text.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RSA/RSA_information.txt" beforeDir="false" afterPath="$PROJECT_DIR$/RSA/RSA_information.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -66,8 +55,13 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Python.AKS_Algorithm.executor": "Run",
     "Python.ECC_Cryptosystem.executor": "Run",
     "Python.ECDSA.executor": "Run",
+    "Python.ECPP.executor": "Run",
+    "Python.ECPP_Core.executor": "Run",
+    "Python.ECPP_Demo.executor": "Run",
+    "Python.ECPP_Utils.executor": "Run",
     "Python.EC_ElGamal.executor": "Run",
     "Python.ElGamal_Crytosystem.executor": "Run",
     "Python.Elliptic_Curve.executor": "Run",
@@ -81,9 +75,12 @@
     "Python.RSA_Cryptosystem.executor": "Run",
     "Python.SD_Primitive_Root.executor": "Run",
     "Python.String_Int.executor": "Run",
+    "Python.demo.executor": "Run",
+    "Python.ecpp_part2.executor": "Run",
     "Python.main.executor": "Run",
     "Python.test_prime.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "master",
@@ -119,5 +116,13 @@
       <updated>1757396606108</updated>
     </task>
     <servers />
+  </component>
+  <component name="github-copilot-workspace">
+    <instructionFileLocations>
+      <option value=".github/instructions" />
+    </instructionFileLocations>
+    <promptFileLocations>
+      <option value=".github/prompts" />
+    </promptFileLocations>
   </component>
 </project>
